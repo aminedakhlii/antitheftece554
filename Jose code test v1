@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 19 01:20:01 2023
+
+Modified on Thu Mar 24 2023
+
+@author: salaz
+"""
+
+import cv2
+import mediapipe as mp
+import pandas as pd
+import os
+import time
+from PIL import Image
+import face_recognition
+from numpy import asarray
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+
+def recognition(im1, known_face_encodings):
+    rgb = asarray(im1)
+    rgb_small_frame = rgb[:, :, ::-1]
+    face_encodings = face_recognition.face_encodings(rgb_small_frame)
+    for face_encoding in face_encodings:
+        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+        if face_distances[0] < .50:
+            print('It is Jose', face_distances)
+            return True
+        else:
+            print('Its not Jose')
+            return False
+
+
+# Function to save faces into folder
+def saving_faces(array, im, frame_no, count, main_folder, known_face_encodings, html_file):
+    num = 1
+    if count > 0:
+        for value in array:
+            im1 = im.crop((value[0], value[1], value[2], value[3]))
+            is_Jose = recognition(im1, known_face_encodings)
+            if is_Jose:
+                im1.save(main_folder + '\\faces_detected\\' + str(frame_no) + '_' + str(num) + 'image.jpg')
+                html_file.write('<p>Detected face in frame ' + str(frame_no) + ' is Jose!</p>')
+            else:
+                html_file.write('<p>Detected face in frame ' + str(frame_no) + ' is not Jose.</p>')
+            num += 1
+
+
+# Function to count number of faces
+def detector(face_detection, frame, frame_no, main_folder, known_face_encodings, html_file):
+    count = 0
+    array = []
+    frame_no = frame_no + 1
+    height, width, channel = frame.shape
+    im = Image.fromarray(frame)
+    color_count = im.getcolors()
+    if color_count:
+        print('')
+    else:
+        # Converting default color code BGR to RGB
+        imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Stores detected bounding box in the frame
+        result = face_detection.process(imgRGB)
+
+        # When face is detected
+        try:
+            for count, detection in enumerate(result.detections):
+                score = detection.score
+                score = int(round(score[0] * 100, 2))
+                box = detection.location_data.relative_bounding_box
+                x, y, w, h = int(box.xmin * width), int(box.ymin * height), int(box.width * width), int(box.height * height)
+                x_min, y_min, x_max, y_max = int(box.xmin * width), int(box.ymin * height), int(box.width * width + box.xmin * width), int(box.height * height + box.ymin * height)
+                array.append([x_min, y_min, x_max, y_max])
+            count += 1
+            saving_faces(array, im, frame_no, count, main_folder, known_face_encodings, html_file)
+        # When no face is detected
+        except:
+            print('no faces')
+    return frame_no
+
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response()
+#Once we have the output.html file generated, we can use a web server to serve the file to clients.
