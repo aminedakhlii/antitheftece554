@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Detected Faces</title>
+</head>
+<body>
+	{% if photo_files %}
+		<h1>Detected Faces</h1>
+		{% for photo_file in photo_files %}
+			<h2>{{ photo_file }}</h2>
+			{% set face_files = [] %}
+			{% for file in os.listdir('faces_detected') if file.startswith(photo_file.split('.')[0]) %}
+				{% set face_files = face_files + [file] %}
+			{% endfor %}
+			{% if face_files %}
+				{% for face_file in face_files %}
+					<img src="{{ url_for('static', filename='faces_detected/' + face_file) }}" alt="Detected face">
+				{% endfor %}
+			{% else %}
+				<p>No faces detected</p>
+			{% endif %}
+		{% endfor %}
+	{% else %}
+		<h1>No photos found</h1>
+	{% endif %}
+</body>
+</html>
