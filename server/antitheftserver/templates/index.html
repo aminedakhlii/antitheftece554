@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Detected Faces</title>
+</head>
+<body>
+	{% if photo_files %}
+		<h1>Detected Faces</h1>
+		{% for photo_file in photo_files %}
+			<h2>{{ photo_file }}</h2>
+					<img src="{{ url_for('static', filename=photo_file) }}" alt="Detected face">
+		{% endfor %}
+	{% else %}
+		<h1>No photos found</h1>
+	{% endif %}
+</body>
+</html>

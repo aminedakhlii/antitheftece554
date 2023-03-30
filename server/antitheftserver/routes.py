@@ -1,7 +1,9 @@
-import app, os
+from antitheftserver import app
+import os
+from os.path import join, dirname, realpath
 from flask import render_template 
 
-PHOTO_FOLDER = ""
+PHOTO_FOLDER = join(dirname(realpath(__file__)), 'static/')
 
 @app.route('/')
 def index():
